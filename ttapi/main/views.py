@@ -1,10 +1,42 @@
 from django.shortcuts import render , redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from .nwuapi import time_table_api
 from django.contrib.auth import authenticate, login as auth_login , logout
 from django.contrib.auth.models import User
 from .models import Profile
+from datetime import datetime
 
+date_p = ""
+
+def check_date(modules, date_pp):
+    global date_p
+    if date_pp == "":
+        # Get today's date
+        today_date = datetime.now().date()
+    else:
+        today_date = datetime.strptime(date_pp, "%Y-%m-%d").date()
+        date_pp = ""
+    # Create a new list to store modules that match today's date
+    filtered_modules = []
+    # Check if the given date matches today's date
+    for module in modules:
+        date_string = module['start']
+        date_string = date_string.split("T")[0]
+        given_date = datetime.strptime(date_string, "%Y-%m-%d").date()
+        if today_date == given_date:
+            filtered_modules.append(module)
+    return filtered_modules
+
+        
+
+
+def date_picked(request):
+    global date_p
+    if request.method == 'POST':
+        date = request.POST.get('date')
+        date_p = date
+        print(date)
+        return redirect(home)
 
 def logout_view(request):
     logout(request)
@@ -24,8 +56,25 @@ def profile_view(request):
         return redirect(login)
 
 def home(request):
-    #return template
-    return render(request, 'index.html', {'name': 'MyNwuTimeTable'})
+    # Check if the user is authenticated
+    if request.user.is_authenticated:
+        profile = Profile.objects.get(author=request.user)
+        module_code = profile.module_code
+        
+        # Check if the user has a module code
+        if module_code == '':
+            return redirect(profile_view)
+        
+        # Get the time table
+        time_table = time_table_api(module_code, date_p)
+        size_of_table = time_table.return_module_size()
+        modules = time_table.return_modules()
+        modules = check_date(modules, date_p)
+        if date_p == "":
+            current_date = str(datetime.now().date())
+        else:
+            current_date = date_p
+    return render(request, 'index.html', {'modules': modules, 'current_date':current_date})
 
 def signup(request):
     if request.method == 'POST':

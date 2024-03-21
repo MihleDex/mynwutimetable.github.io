@@ -9,9 +9,17 @@
                 <div class="col-md-8 col-xl-6 text-center text-md-start mx-auto">
                     <div class="text-center">
                         <div class="dropdown"><button class="btn btn-primary dropdown-toggle" aria-expanded="false" data-bs-toggle="dropdown" type="button" style="margin-bottom: 24px;">Date</button>
-                            <div class="dropdown-menu"><a class="dropdown-item" href="#">First Item</a><a class="dropdown-item" href="#">Second Item</a><a class="dropdown-item" href="#">Third Item</a></div>
-                        </div><small class="form-text">To change module please visit profile&nbsp;</small>
-                        <h1 class="fw-bold" style="padding-top: 23px;">Today</h1>
+                            <div class="dropdown-menu">
+                                <form method="post" action="date_picked">
+                                    {% csrf_token %}
+                                    <input name="date" class="form-control mb-3" type="date">
+                                    <button class="btn btn-primary" type="submit">Submit</button>
+                                </form>
+
+                            </div>
+                        </div><small class="form-text">To change course please visit profile&nbsp;</small>
+                        <h1 class="fw-bold" style="padding-top: 23px;"> {{ current_date }} <div id="date-container"></div>
+                        </h1>
                     </div>
                 </div>
             </div>
@@ -29,15 +37,17 @@
                                     <table class="table">
                                         <thead>
                                             <tr>
-                                                <th>Time</th>
-                                                <th>Module</th>
+                                                <th class="bg-dark text-white">Time</th>
+                                                <th class="bg-dark text-white">Module</th>
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            {% for module in modules %}
                                             <tr>
-                                                <td>Cell 1</td>
-                                                <td>Cell 2</td>
+                                                <td class="bg-dark text-white">{{ module.start|slice:"11:" }}</td>
+                                                <td class="bg-dark text-white">{{ module.modules }}</td>
                                             </tr>
+                                            {% endfor %}
                                             <tr></tr>
                                         </tbody>
                                     </table>

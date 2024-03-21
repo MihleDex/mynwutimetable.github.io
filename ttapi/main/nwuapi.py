@@ -1,11 +1,11 @@
 import requests
 import json
-
+from datetime import datetime, timedelta
  
 class time_table_api():
-	def __init__(self, module_code_group):
+	def __init__(self, module_code_group, date_str):
 		self.module_code_group = module_code_group
-		self.parse_html(module_code_group)
+		self.parse_html(module_code_group,date_str)
 
 	url = 'https://celcat-tst.nwu.ac.za:8446/Home/GetCalendarData'
 	modules = []
@@ -19,11 +19,31 @@ class time_table_api():
 		return len(self.modules)
     
 	# return modules
-	def return_modules(self,pos):
-		return self.modules[pos]
+	def return_modules(self):
+		return self.modules
+
+	def set_week_range(date_str):
+		if not date_str:
+			# If date_str is empty, use today's date
+			date_obj = datetime.now()
+		else:
+			# Convert date string to datetime object
+			date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+		
+		# Find the first day of the current week (Monday)
+		start_of_week = date_obj - timedelta(days=date_obj.weekday())
+		# Find the last day of the current week (Sunday)
+		end_of_week = start_of_week + timedelta(days=6)
+		
+		# Convert start_of_week and end_of_week to string format YYYY-MM-DD
+		start_of_week_str = start_of_week.strftime('%Y-%m-%d')
+		end_of_week_str = end_of_week.strftime('%Y-%m-%d')
+		
+		# Create and return a dictionary with 'start' and 'end' keys
+		return {'start': start_of_week_str, 'end': end_of_week_str}
 	
 	@classmethod
-	def parse_html(self, module_code_group):
+	def parse_html(self, module_code_group,date_str):
 		module_code = module_code_group
 		headers = {
 				'accept': 'application/json, text/javascript, */*; q=0.01',
@@ -42,9 +62,11 @@ class time_table_api():
 				'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36 Edg/123.0.0.0',
 				'x-requested-with': 'XMLHttpRequest'
 		}
+  
+		week_range = self.set_week_range(date_str)
 		data = {
-					'start': '2024-03-18',
-					'end': '2024-03-24',
+					'start': week_range['start'],
+					'end': week_range['end'],
 					'resType': '103',
 					'calView': 'agendaWeek',
 					'federationIds[]': [module_code],
@@ -53,7 +75,7 @@ class time_table_api():
 
 
 		try:
-				response = requests.post(self.url, headers=headers, data=data)
+				response = requests.post(self.url, headers=headers, data=data, timeout=5)
 				modules = json.loads(response.text)
 				self.modules = modules
 
@@ -61,3 +83,5 @@ class time_table_api():
 				print("HTTP Error") 
 
 
+#crawler = time_table_api("2XFH14-N301M-Y2_S1","2024-03-25")
+#print(crawler.return_modules())
