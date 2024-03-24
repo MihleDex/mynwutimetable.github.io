@@ -2,6 +2,7 @@ from django.shortcuts import render , redirect
 from django.http import HttpResponse, JsonResponse
 from .nwuapi import time_table_api
 from django.contrib.auth import authenticate, login as auth_login , logout
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from .models import Profile
 from datetime import datetime
@@ -28,7 +29,17 @@ def check_date(modules, date_pp):
     return filtered_modules
 
         
-
+@login_required
+def delete_account(request):
+    if request.method == 'POST':
+        # Confirm that the user really wants to delete their account
+        if request.POST.get('confirm_delete'):
+            # Delete the user's account
+            request.user.delete()
+            # Logout the user after deleting the account
+            logout(request)
+            return redirect(signup)  # Redirect to home page or any other appropriate page after deletion
+    return render(request, 'profile.html')  # Render a confirmation template
 
 def date_picked(request):
     global date_p
@@ -45,17 +56,22 @@ def logout_view(request):
 def profile_view(request):
     if request.user.is_authenticated:
         profile = Profile.objects.get(author=request.user)
-        
-        if request.method == 'POST':
+        if request.method == 'POST' and 'module_code' in request.POST:
             module_code = request.POST.get('module_code')
-            profile.module_code = module_code
-            profile.save()
-            return redirect(profile_view)
+            module_code = module_code.replace(" ", "")
+            crawler = time_table_api(module_code_group= module_code)
+            if crawler.check_module_code(module_code_group=module_code) == True:
+                profile.module_code = module_code
+                profile.save()
+                return redirect(home)
+            elif crawler.check_module_code(module_code_group=module_code) == None:
+                return render(request, 'profile.html', {'profile': profile, 'error_message': 'Invalid course code','user': request.user})
         return render(request, 'profile.html', {'profile': profile,'user': request.user})
     else:
         return redirect(login)
 
 def home(request):
+    current_date = str(datetime.now().date())
     # Check if the user is authenticated
     if request.user.is_authenticated:
         profile = Profile.objects.get(author=request.user)
@@ -74,7 +90,8 @@ def home(request):
             current_date = str(datetime.now().date())
         else:
             current_date = date_p
-    return render(request, 'index.html', {'modules': modules, 'current_date':current_date})
+        return render(request, 'index.html', {'modules': modules, 'current_date':current_date})
+    return render(request, 'index.html', {'current_date':current_date})
 
 def signup(request):
     if request.method == 'POST':

@@ -19,7 +19,7 @@
                                 </svg></div>
                             <form method="post" action="signup">
                                 {% csrf_token %}
-                                {{ error_message }}
+                                <small class="form-text" style="color: var(--bs-warning);">{{ error_message }}</small>
                                 <div class="mb-3"></div><input class="form-control" name="username" type="text" style="margin-bottom: 10px;" placeholder="Username">
                                 <div class="mb-3"><input class="form-control" type="email" name="email" placeholder="Email" /></div>
                                 <div class="mb-3"><input class="form-control" type="password" name="password1" placeholder="Password"></div>

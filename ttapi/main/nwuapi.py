@@ -3,9 +3,9 @@ import json
 from datetime import datetime, timedelta
  
 class time_table_api():
-	def __init__(self, module_code_group, date_str):
+	def __init__(self, module_code_group, date_str=str(datetime.now().date())):
 		self.module_code_group = module_code_group
-		self.parse_html(module_code_group,date_str)
+		self.parse_html(module_code_group, date_str)
 
 	url = 'https://celcat-tst.nwu.ac.za:8446/Home/GetCalendarData'
 	modules = []
@@ -42,6 +42,49 @@ class time_table_api():
 		# Create and return a dictionary with 'start' and 'end' keys
 		return {'start': start_of_week_str, 'end': end_of_week_str}
 	
+	
+	def check_module_code(self, module_code_group):
+		url = 'https://celcat-tst.nwu.ac.za:8446/Home/ReadResourceListItems'
+		headers = {
+		'accept': 'application/json, text/javascript, */*; q=0.01',
+		'accept-language': 'en-GB,en;q=0.9,en-US;q=0.8,en-ZA;q=0.7',
+		'cookie': '.AspNetCore.Antiforgery.TYugxAo8bBE=CfDJ8L2yCPvd6C5NsETwbUW935wAMz2-z13c4W_-LI5dmn5tx537kTlleZxLiKHkRBy0pK-rBxLN4a2dHyZMSseXA8HbsOTC_-ru9o1jqgTYlt5rytQZJVA-_MYU66YTCaEcmpQ2cExYpEAkjLDgZwP4aTY; .Celcat.Calendar.Session=CfDJ8L2yCPvd6C5NsETwbUW935xAq9JlCgh%2Fgcp7Oe4CEI0b5yUpPdmhQuVmIXN4%2ByOZhUTAkk51926brbFC0Y9AvcCIdP5SxQ7zLZv%2BzElXHoaGCatgv4v5WCdgJTJrqWkVb7AMpRp2NyN7%2FJ%2F1TVv1jPazuTzTJ61NqAdM0XQ%2B2V2S',
+		'dnt': '1',
+		'referer': 'https://celcat-tst.nwu.ac.za:8446/cal?vt=listWeek&dt=2024-03-25&et=group',
+		'sec-ch-ua': '"Microsoft Edge";v="123", "Not:A-Brand";v="8", "Chromium";v="123"',
+		'sec-ch-ua-mobile': '?0',
+		'sec-ch-ua-platform': '"Windows"',
+		'sec-fetch-dest': 'empty',
+		'sec-fetch-mode': 'cors',
+		'sec-fetch-site': 'same-origin',
+		'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36 Edg/123.0.0.0',
+		'x-requested-with': 'XMLHttpRequest'
+		}
+		params = {
+		'myResources': 'false',
+		'searchTerm': module_code_group,
+		'pageSize': '25',
+		'pageNumber': '1',
+		'resType': '103',
+		'secondaryFilterValue1': '',
+		'secondaryFilterValue2': '',
+		'_': '1711267856814'
+		}
+		found = False
+  
+  
+		response = requests.post(url, headers=headers, params=params)
+		if response.status_code == 500:
+			found = False
+			return found
+		else:
+			response_data = json.loads(response.text)
+			# Iterate through the results
+			for result in response_data['results']:
+				if result['id'] == module_code_group:
+					found = True
+					return found
+ 
 	@classmethod
 	def parse_html(self, module_code_group,date_str):
 		module_code = module_code_group
@@ -83,5 +126,6 @@ class time_table_api():
 				print("HTTP Error") 
 
 
-#crawler = time_table_api("2XFH14-N301M-Y2_S1","2024-03-25")
+crawler = time_table_api("2XFH14-N301M-Y2_S","2024-03-25")
+print(crawler.check_module_code('2XFH14-N301M-Y2_S1'))
 #print(crawler.return_modules())
